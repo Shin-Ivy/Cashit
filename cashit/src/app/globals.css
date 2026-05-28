@@ -1,26 +1,107 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ── CashIt Brand Theme — Tailwind v4 CSS-native configuration ── */
+@theme {
+  /* Brand Palette */
+  --color-mint:      #76E8B6;
+  --color-blue:      #4B96F3;
+  --color-base:      #0F141E;
+  --color-surface:   #161C2A;
+  --color-surface-2: #1E2636;
+  --color-border:    #2A3349;
+  --color-muted:     #64748B;
+  --color-on-base:   #E2E8F0;
+
+  /* Semantic aliases */
+  --color-income:  #76E8B6;
+  --color-expense: #F87171;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Border Radius */
+  --radius-xl:  0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+
+  /* Box Shadows */
+  --shadow-glow-mint: 0 0 32px 0 rgba(118, 232, 182, 0.18);
+  --shadow-glow-blue: 0 0 32px 0 rgba(75, 150, 243, 0.18);
+  --shadow-card:      0 4px 24px 0 rgba(0, 0, 0, 0.5);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ── Base Resets ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  background-color: #0F141E;
+  color: #E2E8F0;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+/* ── shadcn/ui CSS Variable Overrides — CashIt Dark Theme ── */
+:root {
+  --background:        15 20 30;
+  --foreground:        226 232 240;
+  --card:              22 28 42;
+  --card-foreground:   226 232 240;
+  --primary:           118 232 182;
+  --primary-foreground: 15 20 30;
+  --secondary:         75 150 243;
+  --secondary-foreground: 15 20 30;
+  --muted:             30 38 54;
+  --muted-foreground:  100 116 139;
+  --accent:            30 38 54;
+  --accent-foreground: 226 232 240;
+  --destructive:       248 113 113;
+  --destructive-foreground: 15 20 30;
+  --border:            42 51 73;
+  --input:             30 38 54;
+  --ring:              118 232 182;
+  --radius:            0.75rem;
+}
+
+/* ── Scrollbar Styling ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0F141E;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A3349;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4B96F3;
+}
+
+/* ── Focus Ring ── */
+:focus-visible {
+  outline: 2px solid #76E8B6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Selection ── */
+::selection {
+  background-color: rgba(118, 232, 182, 0.25);
+  color: #E2E8F0;
 }
