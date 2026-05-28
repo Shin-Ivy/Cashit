@@ -64,7 +64,7 @@ export default function LoginPage(): React.JSX.Element {
         <div className="flex flex-col items-center text-center mb-7 w-full">
           <div className="w-14 h-14 bg-surface-2 border border-border rounded-2xl flex items-center justify-center mb-4 shadow-glow-mint">
             <Image
-              src="/LoDi-Create a combination o...-May 28 2026 12-43-kczxlq3m.jpg"
+              src="/logo.png"
               alt="CashIt Logo"
               width={44}
               height={44}
