@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { SessionProvider } from 'next-auth/react';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,7 +30,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${inter.variable}`}>
       <body className="min-h-screen bg-base text-on-base antialiased">
-        {children}
+        {/*
+         * SessionProvider makes the NextAuth session available to all
+         * Client Components via `useSession()` without extra fetch calls.
+         * It is safe here in the root layout because Next.js will render
+         * it as a Client Component boundary only.
+         */}
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );
