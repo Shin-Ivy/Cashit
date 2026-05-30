@@ -16,9 +16,12 @@ import {
   Link2,
   Eye,
   EyeOff,
+  BarChart3,
+  Receipt,
 } from "lucide-react";
 import { formatIDR } from "@/lib/formatters";
 import LinkEWalletModal from "@/components/dashboard/LinkEWalletModal";
+import AddTransactionModal from "@/components/dashboard/AddTransactionModal";
 
 /* ─── Placeholder Data Types ──────────────────────────────────────────────── */
 
@@ -37,71 +40,109 @@ interface Transaction {
   readonly date: string;
 }
 
-/* ─── Placeholder Data ────────────────────────────────────────────────────── */
+/* ─── Empty State Component ───────────────────────────────────────────────── */
 
-const MOCK_TRANSACTIONS: readonly Transaction[] = [
-  {
-    id: "1",
-    description: "Freelance Web Dev",
-    amount: 4500000,
-    type: "income",
-    category: "Freelance",
-    date: "2026-05-29T10:30:00",
-  },
-  {
-    id: "2",
-    description: "Grab Food Delivery",
-    amount: 45000,
-    type: "expense",
-    category: "Food",
-    date: "2026-05-29T09:15:00",
-  },
-  {
-    id: "3",
-    description: "Monthly Salary",
-    amount: 12000000,
-    type: "income",
-    category: "Salary",
-    date: "2026-05-28T08:00:00",
-  },
-  {
-    id: "4",
-    description: "Electric Bill",
-    amount: 350000,
-    type: "expense",
-    category: "Utilities",
-    date: "2026-05-27T14:22:00",
-  },
-  {
-    id: "5",
-    description: "Coffee & Snacks",
-    amount: 68000,
-    type: "expense",
-    category: "Food",
-    date: "2026-05-27T11:05:00",
-  },
-] as const;
+function EmptyState({
+  icon: Icon,
+  title,
+  subtitle,
+}: {
+  readonly icon: React.ComponentType<{ className?: string }>;
+  readonly title: string;
+  readonly subtitle: string;
+}): React.JSX.Element {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 lg:py-14 px-6">
+      {/* Glowing icon container */}
+      <div className="relative mb-5">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 w-16 h-16 bg-mint/10 rounded-full blur-xl animate-pulse"
+        />
+        <div className="relative w-16 h-16 rounded-2xl bg-surface-2 border border-border/50 flex items-center justify-center">
+          <Icon className="w-7 h-7 text-muted" />
+        </div>
+      </div>
+      <p className="text-sm font-semibold text-gray-100 text-center mb-1.5">
+        {title}
+      </p>
+      <p className="text-xs text-gray-400 text-center max-w-[240px] leading-relaxed">
+        {subtitle}
+      </p>
+    </div>
+  );
+}
 
 /* ─── Mini Bar Chart (Income vs Expense) ──────────────────────────────────── */
 
-const CHART_DATA: readonly { label: string; income: number; expense: number }[] = [
-  { label: "Mon", income: 2500000, expense: 800000 },
-  { label: "Tue", income: 1200000, expense: 1500000 },
-  { label: "Wed", income: 4500000, expense: 450000 },
-  { label: "Thu", income: 800000, expense: 2200000 },
-  { label: "Fri", income: 3200000, expense: 900000 },
-  { label: "Sat", income: 600000, expense: 350000 },
-  { label: "Sun", income: 0, expense: 200000 },
-] as const;
+function EmptyChartState(): React.JSX.Element {
+  // Decorative placeholder bars for the empty chart
+  const PLACEHOLDER_BARS = [30, 55, 20, 65, 40, 25, 45];
+  return (
+    <div className="flex flex-col items-center">
+      {/* Faded decorative chart */}
+      <div className="flex items-end gap-1.5 lg:gap-3 h-24 lg:h-40 w-full opacity-20 mb-4">
+        {PLACEHOLDER_BARS.map((height, i) => (
+          <div
+            key={`placeholder-${i}`}
+            className="flex-1 flex flex-col items-center gap-0.5"
+          >
+            <div className="flex gap-px lg:gap-0.5 w-full h-20 lg:h-36 items-end justify-center">
+              <div
+                className="w-[45%] bg-mint/40 rounded-t-sm lg:rounded-t"
+                style={{ height: `${height}%` }}
+              />
+              <div
+                className="w-[45%] bg-expense/40 rounded-t-sm lg:rounded-t"
+                style={{ height: `${Math.max(height - 15, 10)}%` }}
+              />
+            </div>
+            <span className="text-[9px] lg:text-xs text-muted font-medium">
+              {["M", "T", "W", "T", "F", "S", "S"][i]}
+            </span>
+          </div>
+        ))}
+      </div>
+      <EmptyState
+        icon={BarChart3}
+        title="No data to visualize"
+        subtitle="Your income vs expense chart will appear here once you start adding transactions."
+      />
+    </div>
+  );
+}
 
-const MAX_CHART_VALUE = Math.max(
-  ...CHART_DATA.map((d) => Math.max(d.income, d.expense))
-);
+function MiniBarChart({
+  transactions,
+}: {
+  readonly transactions: readonly Transaction[];
+}): React.JSX.Element {
+  // Build chart data from transactions — group by day of week
+  const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const chartData = dayLabels.map((label) => ({
+    label,
+    income: 0,
+    expense: 0,
+  }));
 
-function MiniBarChart(): React.JSX.Element {
+  for (const txn of transactions) {
+    const d = new Date(txn.date);
+    const dayIndex = (d.getDay() + 6) % 7; // Monday = 0
+    if (txn.type === "income") {
+      chartData[dayIndex].income += txn.amount;
+    } else {
+      chartData[dayIndex].expense += txn.amount;
+    }
+  }
+
+  const maxValue = Math.max(
+    ...chartData.map((d) => Math.max(d.income, d.expense)),
+    1
+  );
+
   return (
     <div className="flex items-end gap-1.5 lg:gap-3 h-24 lg:h-40 w-full">
-      {CHART_DATA.map((day) => (
+      {chartData.map((day) => (
         <div
           key={day.label}
           className="flex-1 flex flex-col items-center gap-0.5"
@@ -111,18 +152,20 @@ function MiniBarChart(): React.JSX.Element {
             <div
               className="w-[45%] bg-mint/70 rounded-t-sm lg:rounded-t transition-all duration-500 min-h-[2px]"
               style={{
-                height: `${Math.max((day.income / MAX_CHART_VALUE) * 100, 3)}%`,
+                height: `${Math.max((day.income / maxValue) * 100, 3)}%`,
               }}
             />
             {/* Expense bar */}
             <div
               className="w-[45%] bg-expense/70 rounded-t-sm lg:rounded-t transition-all duration-500 min-h-[2px]"
               style={{
-                height: `${Math.max((day.expense / MAX_CHART_VALUE) * 100, 3)}%`,
+                height: `${Math.max((day.expense / maxValue) * 100, 3)}%`,
               }}
             />
           </div>
-          <span className="text-[9px] lg:text-xs text-muted font-medium">{day.label}</span>
+          <span className="text-[9px] lg:text-xs text-muted font-medium">
+            {day.label}
+          </span>
         </div>
       ))}
     </div>
@@ -136,25 +179,28 @@ export default function DashboardClient(): React.JSX.Element {
   const userName = session?.user?.name ?? "User";
   const userImage = session?.user?.image ?? null;
 
-  // Wallet balances (mock)
-  const [cashBalance] = useState(2750000);
-  const [bankBalance] = useState(15400000);
+  // Wallet balances — default to zero for new users
+  const [cashBalance] = useState(0);
   const [showBalance, setShowBalance] = useState(true);
 
   // E-Wallet linking
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkedWallets, setLinkedWallets] = useState<LinkedWallet[]>([]);
 
+  // Add Transaction modal
+  const [isAddTxnModalOpen, setIsAddTxnModalOpen] = useState(false);
+
+  // Transactions — empty by default (no mock data)
+  const [transactions] = useState<readonly Transaction[]>([]);
+
   const totalLinkedBalance = linkedWallets.reduce((s, w) => s + w.balance, 0);
-  const netBalance = cashBalance + bankBalance + totalLinkedBalance;
-  const totalIncome = MOCK_TRANSACTIONS.filter((t) => t.type === "income").reduce(
-    (s, t) => s + t.amount,
-    0
-  );
-  const totalExpense = MOCK_TRANSACTIONS.filter((t) => t.type === "expense").reduce(
-    (s, t) => s + t.amount,
-    0
-  );
+  const netBalance = cashBalance + totalLinkedBalance;
+  const totalIncome = transactions
+    .filter((t) => t.type === "income")
+    .reduce((s, t) => s + t.amount, 0);
+  const totalExpense = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((s, t) => s + t.amount, 0);
 
   const handleLinkWallet = useCallback((wallet: LinkedWallet): void => {
     setLinkedWallets((prev) => [...prev, wallet]);
@@ -162,6 +208,8 @@ export default function DashboardClient(): React.JSX.Element {
 
   const displayAmount = (amount: number): string =>
     showBalance ? formatIDR(amount) : "Rp ••••••";
+
+  const hasTransactions = transactions.length > 0;
 
   return (
     <div className="min-h-screen bg-base pb-24 lg:pb-8">
@@ -291,8 +339,12 @@ export default function DashboardClient(): React.JSX.Element {
                   </p>
                 </div>
 
-                {/* Non-Physical Balance (Bank) */}
-                <div className="bg-surface border border-border rounded-2xl p-4 shadow-card group hover:border-blue/30 transition-all">
+                {/* Non-Physical Balance (Bank) — Not Linked State */}
+                <button
+                  type="button"
+                  aria-label="Setup bank account"
+                  className="bg-surface border border-border rounded-2xl p-4 shadow-card group hover:border-blue/30 transition-all text-left w-full cursor-pointer"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-xl bg-blue/10 flex items-center justify-center">
@@ -307,12 +359,15 @@ export default function DashboardClient(): React.JSX.Element {
                         </p>
                       </div>
                     </div>
-                    <div className="w-2 h-2 rounded-full bg-blue animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-muted/50" />
                   </div>
-                  <p className="text-lg font-bold text-on-base">
-                    {displayAmount(bankBalance)}
+                  <p className="text-sm font-semibold text-gray-400">
+                    Not Linked Yet
                   </p>
-                </div>
+                  <p className="text-[10px] text-blue font-medium mt-1 group-hover:underline transition-all">
+                    Click to setup
+                  </p>
+                </button>
 
                 {/* Linked E-Wallets */}
                 {linkedWallets.map((ew, idx) => (
@@ -341,6 +396,39 @@ export default function DashboardClient(): React.JSX.Element {
                     </p>
                   </div>
                 ))}
+
+                {/* E-Wallet — Not Linked State (shown when no e-wallets linked) */}
+                {linkedWallets.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsLinkModalOpen(true)}
+                    aria-label="Setup e-wallet"
+                    className="bg-surface border border-border rounded-2xl p-4 shadow-card group hover:border-mint/30 transition-all text-left w-full cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-mint/10 flex items-center justify-center">
+                          <Smartphone className="w-4.5 h-4.5 text-mint" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-on-base leading-none">
+                            E-Wallet
+                          </p>
+                          <p className="text-[10px] text-muted leading-tight mt-0.5">
+                            GoPay, OVO, DANA
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-2 h-2 rounded-full bg-muted/50" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-400">
+                      Not Linked Yet
+                    </p>
+                    <p className="text-[10px] text-mint font-medium mt-1 group-hover:underline transition-all">
+                      Click to setup
+                    </p>
+                  </button>
+                )}
 
                 {/* Link E-Wallet CTA */}
                 <button
@@ -373,21 +461,25 @@ export default function DashboardClient(): React.JSX.Element {
             {/* ── Income vs Expenses Chart ─────────────────────────────── */}
             <section className="bg-surface border border-border rounded-2xl p-4 lg:p-6 shadow-card">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs lg:text-sm font-semibold text-on-base">
+                <h3 className="text-xs lg:text-sm font-semibold text-gray-100">
                   Income vs Expenses
                 </h3>
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-mint/70" />
-                    <span className="text-[9px] lg:text-xs text-muted">Income</span>
+                    <span className="text-[9px] lg:text-xs text-gray-400">Income</span>
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-expense/70" />
-                    <span className="text-[9px] lg:text-xs text-muted">Expense</span>
+                    <span className="text-[9px] lg:text-xs text-gray-400">Expense</span>
                   </span>
                 </div>
               </div>
-              <MiniBarChart />
+              {hasTransactions ? (
+                <MiniBarChart transactions={transactions} />
+              ) : (
+                <EmptyChartState />
+              )}
             </section>
 
             {/* ── Recent Transactions ──────────────────────────────────── */}
@@ -396,56 +488,70 @@ export default function DashboardClient(): React.JSX.Element {
                 <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">
                   Recent Transactions
                 </h3>
-                <button
-                  type="button"
-                  className="text-[10px] lg:text-xs text-blue font-medium hover:underline"
-                >
-                  View All
-                </button>
-              </div>
-              <div className="bg-surface border border-border rounded-2xl overflow-hidden shadow-card divide-y divide-border/50">
-                {MOCK_TRANSACTIONS.map((txn) => (
-                  <div
-                    key={txn.id}
-                    className="flex items-center gap-3 px-4 lg:px-5 py-3 lg:py-4 hover:bg-surface-2/50 transition-colors"
+                {hasTransactions && (
+                  <button
+                    type="button"
+                    className="text-[10px] lg:text-xs text-blue font-medium hover:underline"
                   >
-                    <div
-                      className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        txn.type === "income"
-                          ? "bg-mint/10"
-                          : "bg-expense/10"
-                      }`}
-                    >
-                      {txn.type === "income" ? (
-                        <ArrowDownLeft className="w-4 h-4 lg:w-5 lg:h-5 text-mint" />
-                      ) : (
-                        <ArrowUpRight className="w-4 h-4 lg:w-5 lg:h-5 text-expense" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm lg:text-base font-medium text-on-base truncate">
-                        {txn.description}
-                      </p>
-                      <p className="text-[10px] lg:text-xs text-muted">{txn.category}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p
-                        className={`text-sm lg:text-base font-semibold ${
-                          txn.type === "income" ? "text-mint" : "text-expense"
-                        }`}
+                    View All
+                  </button>
+                )}
+              </div>
+              <div className="bg-surface border border-border rounded-2xl overflow-hidden shadow-card">
+                {hasTransactions ? (
+                  <div className="divide-y divide-border/50">
+                    {transactions.map((txn) => (
+                      <div
+                        key={txn.id}
+                        className="flex items-center gap-3 px-4 lg:px-5 py-3 lg:py-4 hover:bg-surface-2/50 transition-colors"
                       >
-                        {txn.type === "income" ? "+" : "-"}
-                        {formatIDR(txn.amount)}
-                      </p>
-                      <p className="text-[9px] lg:text-[11px] text-muted">
-                        {new Intl.DateTimeFormat("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        }).format(new Date(txn.date))}
-                      </p>
-                    </div>
+                        <div
+                          className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                            txn.type === "income"
+                              ? "bg-mint/10"
+                              : "bg-expense/10"
+                          }`}
+                        >
+                          {txn.type === "income" ? (
+                            <ArrowDownLeft className="w-4 h-4 lg:w-5 lg:h-5 text-mint" />
+                          ) : (
+                            <ArrowUpRight className="w-4 h-4 lg:w-5 lg:h-5 text-expense" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm lg:text-base font-medium text-gray-100 truncate">
+                            {txn.description}
+                          </p>
+                          <p className="text-[10px] lg:text-xs text-gray-400">
+                            {txn.category}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p
+                            className={`text-sm lg:text-base font-semibold ${
+                              txn.type === "income" ? "text-mint" : "text-expense"
+                            }`}
+                          >
+                            {txn.type === "income" ? "+" : "-"}
+                            {formatIDR(txn.amount)}
+                          </p>
+                          <p className="text-[9px] lg:text-[11px] text-gray-400">
+                            {new Intl.DateTimeFormat("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            }).format(new Date(txn.date))}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <EmptyState
+                    icon={Receipt}
+                    title="No transactions yet"
+                    subtitle="Click the + button to start tracking your finances. Your recent activity will appear here."
+                  />
+                )}
               </div>
             </section>
           </div>
@@ -455,6 +561,7 @@ export default function DashboardClient(): React.JSX.Element {
       {/* ── Quick Actions FAB ────────────────────────────────────────── */}
       <button
         type="button"
+        onClick={() => setIsAddTxnModalOpen(true)}
         aria-label="Add new transaction"
         className="fixed bottom-24 right-5 sm:right-[calc(50%-14rem)] lg:bottom-8 lg:right-8 z-40 w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-mint to-blue rounded-full shadow-glow-mint flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
       >
@@ -466,6 +573,12 @@ export default function DashboardClient(): React.JSX.Element {
         isOpen={isLinkModalOpen}
         onClose={() => setIsLinkModalOpen(false)}
         onLink={handleLinkWallet}
+      />
+
+      {/* ── Add Transaction Modal ────────────────────────────────────── */}
+      <AddTransactionModal
+        isOpen={isAddTxnModalOpen}
+        onClose={() => setIsAddTxnModalOpen(false)}
       />
     </div>
   );

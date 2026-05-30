@@ -34,6 +34,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
       /**
+       * Force Google to always show the Account Chooser screen so users
+       * can freely switch between multiple Google accounts after logout.
+       * Using URL string format for maximum compatibility with Auth.js v5 beta.
+       */
+      authorization:
+        "https://accounts.google.com/o/oauth2/v2/auth?prompt=select_account&access_type=offline",
+      /**
        * Allows a user who registered via Email/Password to later sign in
        * with Google (same email), linking both methods to one account.
        */
@@ -130,4 +137,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     /** All auth flows redirect to the root login/signup page. */
     signIn: '/',
   },
+
+  /**
+   * Explicit secret for signing JWTs and encrypting cookies.
+   * Auth.js v5 looks for AUTH_SECRET by default, but we also
+   * fall back to NEXTAUTH_SECRET for local-dev compatibility.
+   */
+  secret: (process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET) as string,
 });
